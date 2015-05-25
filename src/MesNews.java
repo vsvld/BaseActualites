@@ -57,11 +57,12 @@ public class MesNews extends Application {
         MenuItem rechercherBouton = new MenuItem("Rechercher");
         rechercherBouton.setOnAction(e -> rechercher());
 
-        baseMenu.getItems().addAll(nouvellePhotoBouton, nouveauArticleBouton, new SeparatorMenuItem(), afficherPhotosBouton, afficherArticlesBouton, new SeparatorMenuItem(), rechercherBouton);
+        actualitesMenu.getItems().addAll(nouvellePhotoBouton, nouveauArticleBouton, new SeparatorMenuItem(),
+                afficherPhotosBouton, afficherArticlesBouton, new SeparatorMenuItem(), rechercherBouton);
 
         // Main menu bar
         MenuBar menuBar = new MenuBar();
-        menuBar.getMenus().addAll(baseMenu);
+        menuBar.getMenus().addAll(baseMenu, actualitesMenu);
 
         layout = new BorderPane();
         layout.setTop(menuBar);
@@ -69,8 +70,6 @@ public class MesNews extends Application {
         window.setScene(scene);
         window.show();
     }
-
-
 
 
     private void creerBase() {
