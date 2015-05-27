@@ -176,9 +176,9 @@ public class MesNews extends Application {
 
     }
 
-    private boolean estCree() {
-        return maBase != null;
-    }
+//    private boolean estCree() {
+//        return maBase != null;
+//    }
 
     private void afficherTable() {
         // Date colonne
