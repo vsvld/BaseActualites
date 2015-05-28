@@ -1,19 +1,25 @@
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.time.LocalDate;
+import java.util.Optional;
 
 import static javafx.scene.control.Alert.*;
+import static javafx.scene.control.ButtonBar.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,6 +32,7 @@ public class MesNews extends Application {
     private static BaseDeNews maBase;
     private Stage stage;
     private BorderPane layout;
+    private MenuBar menuBar;
 
     public static void main(String[] args) {
         launch(args);
@@ -75,7 +82,7 @@ public class MesNews extends Application {
         // TODO General menu with "exit", "about us" etc.
 
         // Main menu bar
-        MenuBar menuBar = new MenuBar();
+        menuBar = new MenuBar();
         menuBar.getMenus().addAll(baseMenu, actualitesMenu);
 
         layout = new BorderPane();
@@ -98,7 +105,7 @@ public class MesNews extends Application {
 
         alert.showAndWait();
 
-        afficherTable();
+        afficherBase();
     }
 
     // TODO confirmation and saving
@@ -117,7 +124,7 @@ public class MesNews extends Application {
             alert.setContentText("Vous avez bien ouvert le fichier !");
             alert.showAndWait();
 
-            afficherTable();
+            afficherBase();
 
         } catch (IOException | ClassNotFoundException e) {
             Alert alert = new Alert(AlertType.ERROR);
@@ -152,11 +159,166 @@ public class MesNews extends Application {
     }
 
     private void creerPhoto() {
+        Dialog<Photo> dialog = new Dialog<>();
+        dialog.setTitle("Photo creation");
+        dialog.setHeaderText("Remplissez les paramètres de photo");
 
+        // TODO set the icon
+
+        // TODO extract
+        ButtonType enregistrerButtonType = new ButtonType("Enregistrer", ButtonData.OK_DONE);
+        ButtonType annulerButtonType = new ButtonType("Annuler", ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(enregistrerButtonType, annulerButtonType);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField titre = new TextField();
+        TextField auteur = new TextField();
+        TextField date = new TextField(); // TODO DatePicker
+        TextField source = new TextField();
+        TextField resolutionHauteur = new TextField();
+        TextField resolutionLargeur = new TextField();
+        TextField format = new TextField(); // TODO chooser
+        CheckBox enCouleur = new CheckBox();
+
+        Button ouvrirImageBouton = new Button("Ouvrir...");
+        final File[] file = new File[1];
+
+        // TODO images only
+        ouvrirImageBouton.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Ouvrir une image");
+            file[0] = fileChooser.showOpenDialog(stage);
+        });
+
+        grid.add(new Label("Titre:"), 0, 0);
+        grid.add(titre, 1, 0);
+        grid.add(new Label("Auteur:"), 0, 1);
+        grid.add(auteur, 1, 1);
+        grid.add(new Label("Date:"), 0, 2);
+        grid.add(date, 1, 2);
+        grid.add(new Label("Source:"), 0, 3);
+        grid.add(source, 1, 3);
+        grid.add(new Label("Image:"), 0, 4);
+        grid.add(ouvrirImageBouton, 1, 4);
+        grid.add(new Label("Resolution hauteur:"), 0, 5);
+        grid.add(resolutionHauteur, 1, 5);
+        grid.add(new Label("Resolution largeur:"), 0, 6);
+        grid.add(resolutionLargeur, 1, 6);
+        grid.add(new Label("Format:"), 0, 7);
+        grid.add(format, 1, 7);
+        grid.add(new Label("En couleur"), 0, 8);
+        grid.add(enCouleur, 1, 8);
+
+        // TODO add validation
+//        username.textProperty().addListener((observable, oldValue, newValue) -> {
+//            loginButton.setDisable(newValue.trim().isEmpty());
+//        });
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the titre field by default.
+        Platform.runLater(titre::requestFocus);
+
+        // convert
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == enregistrerButtonType) {
+                try {
+                    LocalDate localDate = LocalDate.parse(date.getText());
+                    URL url = new URL(source.getText());
+                    int hauteur = Integer.parseInt(resolutionHauteur.getText());
+                    int largeur = Integer.parseInt(resolutionLargeur.getText());
+                    return new Photo(titre.getText(), auteur.getText(), localDate, url, file[0], format.getText(), hauteur, largeur, enCouleur.isSelected());
+                } catch (Exception e) {
+                    e.printStackTrace(); // TODO Alert
+                }
+            }
+            return null;
+        });
+
+        Optional<Photo> resultat = dialog.showAndWait();
+        if (resultat.isPresent()) {
+//            System.out.println(resultat);
+            maBase.ajouter(resultat.get());
+            afficherBase();
+        }
     }
 
     private void creerArticle() {
+        Dialog<ArticleDePresse> dialog = new Dialog<>();
+        dialog.setTitle("Article de presse creation");
+        dialog.setHeaderText("Remplissez les paramètres d'article");
 
+        // TODO set the icon
+
+        // TODO extract
+        ButtonType enregistrerButtonType = new ButtonType("Enregistrer", ButtonData.OK_DONE);
+        ButtonType annulerButtonType = new ButtonType("Annuler", ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(enregistrerButtonType, annulerButtonType);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField titre = new TextField();
+        TextField auteur = new TextField();
+        TextField date = new TextField(); // TODO DatePicker
+        TextField source = new TextField();
+        TextArea texte = new TextArea();
+        texte.setWrapText(true);
+        TextField versionLongue = new TextField();
+        CheckBox uniquementElectronique = new CheckBox();
+
+        grid.add(new Label("Titre:"), 0, 0);
+        grid.add(titre, 1, 0);
+        grid.add(new Label("Auteur:"), 0, 1);
+        grid.add(auteur, 1, 1);
+        grid.add(new Label("Date:"), 0, 2);
+        grid.add(date, 1, 2);
+        grid.add(new Label("Source:"), 0, 3);
+        grid.add(source, 1, 3);
+        grid.add(new Label("Texte:"), 0, 4);
+        grid.add(texte, 1, 4);
+        grid.add(new Label("Version longue (URL):"), 0, 5);
+        grid.add(versionLongue, 1, 5);
+        grid.add(new Label("Uniquement électronique:"), 0, 6);
+        grid.add(uniquementElectronique, 1, 6);
+
+        // TODO add validation
+//        username.textProperty().addListener((observable, oldValue, newValue) -> {
+//            loginButton.setDisable(newValue.trim().isEmpty());
+//        });
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the titre field by default.
+        Platform.runLater(titre::requestFocus);
+
+        // convert
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == enregistrerButtonType) {
+                try {
+                    LocalDate localDate = LocalDate.parse(date.getText());
+                    URL url = new URL(source.getText());
+                    URL longue = new URL(versionLongue.getText());
+                    return new ArticleDePresse(titre.getText(), auteur.getText(), localDate, url, texte.getText(), longue, uniquementElectronique.isSelected());
+                } catch (Exception e) {
+                    e.printStackTrace(); // TODO Alert
+                }
+            }
+            return null;
+        });
+
+        Optional<ArticleDePresse> resultat = dialog.showAndWait();
+        if (resultat.isPresent()) {
+//            System.out.println(resultat);
+            maBase.ajouter(resultat.get());
+            afficherBase();
+        }
     }
 
     private void afficherArticles() {
@@ -176,11 +338,11 @@ public class MesNews extends Application {
 
     }
 
-//    private boolean estCree() {
-//        return maBase != null;
-//    }
+    private boolean estCree() {
+        return maBase != null;
+    }
 
-    private void afficherTable() {
+    private void afficherBase() {
         // Date colonne
         TableColumn<News, String> dateColonne = new TableColumn<>("Date");
         dateColonne.setMinWidth(200);
@@ -225,8 +387,6 @@ public class MesNews extends Application {
 
         layout.setCenter(table);
         layout.setBottom(hBox);
-        Scene scene = new Scene(layout);
-        stage.setScene(scene);
     }
 
     private void montrerActualite() {
