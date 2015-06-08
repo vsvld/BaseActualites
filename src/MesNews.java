@@ -1,17 +1,23 @@
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,6 +39,7 @@ public class MesNews extends Application {
     private Stage stage;
     private BorderPane layout;
     private MenuBar menuBar;
+    TableView<News> table;
 
     public static void main(String[] args) {
         launch(args);
@@ -108,6 +115,7 @@ public class MesNews extends Application {
         afficherBase();
     }
 
+    // TODO open base with photos!!
     // TODO confirmation and saving
     private void ouvrir() {
         FileChooser fileChooser = new FileChooser();
@@ -381,7 +389,7 @@ public class MesNews extends Application {
         hBox.setSpacing(10);
         hBox.getChildren().addAll(montrerBouton, supprimerBouton, rechercheChamp, rechercheBouton);
 
-        TableView<News> table = new TableView<>();
+        table = new TableView<>();
         table.setItems(FXCollections.observableArrayList(maBase.getBase()));
         table.getColumns().addAll(dateColonne, typeColonne, titreColonne, auteurColonne);
 
@@ -390,10 +398,71 @@ public class MesNews extends Application {
     }
 
     private void montrerActualite() {
+        ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
+
+        // TODO error handling
+        for (News news : newsSelected) {
+            switch (news.getClass().getSimpleName()) {
+                case "Photo":
+                    montrerPhoto((Photo) news);
+                    break;
+                case "ArticleDePresse":
+                    montrerArticle((ArticleDePresse) news);
+                    break;
+            }
+        }
+    }
+
+    private void montrerPhoto(Photo photo) {
+        Stage showStage = new Stage();
+        VBox vBox = new VBox();
+
+        showStage.setTitle("Photo");
+        Image image = null;
+
+        try {
+            image = new Image(new FileInputStream(photo.getFichier()));
+        } catch (FileNotFoundException e) {
+            // TODO Normal error
+            System.out.println("Something is wrong with loading the image");
+        }
+
+        ImageView imageView = new ImageView(image);
+
+        if (photo.getResolutionLargeur() > 600) {
+            imageView.setFitWidth(600);
+            imageView.setPreserveRatio(true);
+        }
+
+        imageView.setSmooth(true);
+
+        vBox.getChildren().addAll(
+                new Label(photo.getTitre()),
+                new Separator(),
+                new Label("Auteur: " + photo.getAuteur()),
+                new Label("Date: " + photo.getDate()),
+                new Label("Source: " + photo.getSource()),
+                new Separator(),
+                imageView,
+                new Separator(),
+                new Label("Photo détails:"),
+                new Label("Format: " + photo.getFormat()),
+                new Label("Resolution: " + photo.getResolutionLargeur() + "x" + photo.getResolutionHauteur()));
+
+        Scene showScene = new Scene(vBox, 640, 480);
+        showStage.setScene(showScene);
+        showStage.showAndWait();
+    }
+
+    private void montrerArticle(ArticleDePresse articleDePresse) {
 
     }
 
     private void supprimerActualite() {
+        ObservableList<News> newsSelected, allNews;
+        allNews = table.getItems();
+        newsSelected = table.getSelectionModel().getSelectedItems();
 
+        newsSelected.forEach(allNews::remove);
     }
 }

@@ -1,10 +1,8 @@
+import java.io.Serializable;
 import java.net.URL;
 import java.time.LocalDate;
 
-/**
- * Created by vsevolod on 15.04.15.
- */
-public abstract class News implements Comparable<News> {
+public abstract class News implements Comparable<News>, Serializable {
     private String titre, auteur, type;
     private LocalDate date;
     private URL source;
