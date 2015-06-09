@@ -3,9 +3,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeSet;
 
-/**
- * Created by vsevolod on 16.04.15.
- */
 public class BaseDeNews {
     private ArrayList<News> base;
 
@@ -31,5 +28,9 @@ public class BaseDeNews {
         try (FileInputStream fos = new FileInputStream(file); ObjectInputStream oos = new ObjectInputStream(fos)) {
             base = (ArrayList<News>) oos.readObject();
         }
+    }
+    
+    public void change(News old, News neww) {
+        base.set(base.indexOf(old), neww);
     }
 }

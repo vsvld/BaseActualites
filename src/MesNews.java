@@ -3,6 +3,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -12,6 +13,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -19,7 +23,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -115,7 +118,6 @@ public class MesNews extends Application {
         afficherBase();
     }
 
-    // TODO open base with photos!!
     // TODO confirmation and saving
     private void ouvrir() {
         FileChooser fileChooser = new FileChooser();
@@ -123,6 +125,7 @@ public class MesNews extends Application {
         File file = fileChooser.showOpenDialog(stage);
 
         try {
+            maBase = new BaseDeNews();
             maBase.lireDansFichier(file);
 
             // TODO all dialogs to methods
@@ -139,7 +142,7 @@ public class MesNews extends Application {
             alert.setTitle("Erreur");
             alert.setHeaderText("Quelque chose ne va pas avec ouverture de votre fichier !");
             alert.setContentText(e.toString());
-
+//            e.printStackTrace();
             alert.showAndWait();
         }
     }
@@ -397,6 +400,7 @@ public class MesNews extends Application {
         layout.setBottom(hBox);
     }
 
+    // TODO check if no selected on show, edit, delete
     private void montrerActualite() {
         ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
 
@@ -413,9 +417,13 @@ public class MesNews extends Application {
         }
     }
 
+    // TODO align scrollpane center both photo and article
     private void montrerPhoto(Photo photo) {
         Stage showStage = new Stage();
         VBox vBox = new VBox();
+        vBox.setAlignment(Pos.TOP_CENTER);
+        ScrollPane scrollPane = new ScrollPane(vBox);
+        scrollPane.setPrefSize(640, 480);
 
         showStage.setTitle("Photo");
         Image image = null;
@@ -436,26 +444,258 @@ public class MesNews extends Application {
 
         imageView.setSmooth(true);
 
-        vBox.getChildren().addAll(
-                new Label(photo.getTitre()),
-                new Separator(),
-                new Label("Auteur: " + photo.getAuteur()),
-                new Label("Date: " + photo.getDate()),
-                new Label("Source: " + photo.getSource()),
-                new Separator(),
-                imageView,
-                new Separator(),
-                new Label("Photo détails:"),
-                new Label("Format: " + photo.getFormat()),
-                new Label("Resolution: " + photo.getResolutionLargeur() + "x" + photo.getResolutionHauteur()));
+        Text titre = new Text(photo.getTitre());
+        titre.setFont(new Font(20));
+        titre.setWrappingWidth(600);
+        titre.setTextAlignment(TextAlignment.CENTER);
 
-        Scene showScene = new Scene(vBox, 640, 480);
+        StringBuilder infoStr = new StringBuilder();
+        infoStr.append("Auteur: ").append(photo.getAuteur()).append("\n");
+        infoStr.append("Date: ").append(photo.getDate()).append("\n");
+        infoStr.append("Source: ").append(photo.getSource()).append("\n");
+        infoStr.append("Format: ").append(photo.getFormat()).append("\n");
+        infoStr.append("Resolution: ").append(photo.getResolutionLargeur()).append("x").append(photo.getResolutionHauteur());
+
+        Text info = new Text(infoStr.toString());
+        info.setTextAlignment(TextAlignment.CENTER);
+
+        vBox.getChildren().addAll(
+                new Label(),
+                titre,
+                new Label(),
+                new Label(),
+                imageView,
+                new Label(),
+                info);
+
+        Scene showScene = new Scene(scrollPane, 640, 480);
         showStage.setScene(showScene);
         showStage.showAndWait();
     }
 
     private void montrerArticle(ArticleDePresse articleDePresse) {
+        Stage showStage = new Stage();
+        VBox vBox = new VBox();
+        vBox.setAlignment(Pos.TOP_CENTER);
+        ScrollPane scrollPane = new ScrollPane(vBox);
+        scrollPane.setPrefSize(640, 480);
 
+        showStage.setTitle("Article de presse");
+
+        Text titre = new Text(articleDePresse.getTitre());
+        titre.setFont(new Font(20));
+        titre.setWrappingWidth(600);
+        titre.setTextAlignment(TextAlignment.CENTER);
+
+        StringBuilder infoStr1 = new StringBuilder();
+        infoStr1.append("Auteur: ").append(articleDePresse.getAuteur()).append("\n");
+        infoStr1.append("Date: ").append(articleDePresse.getDate()).append("\n");
+        infoStr1.append("Source: ").append(articleDePresse.getSource());
+
+        Text info1 = new Text(infoStr1.toString());
+        info1.setTextAlignment(TextAlignment.LEFT);
+        info1.setWrappingWidth(600);
+
+        Text texte = new Text(articleDePresse.getTexte());
+        texte.setWrappingWidth(600);
+
+        StringBuilder infoStr2 = new StringBuilder();
+        infoStr2.append("Version longue: ").append(articleDePresse.getVersionLongue()).append("\n");
+        infoStr2.append("Uniquement électronique: ").append(articleDePresse.isUniquementElectronique() ? "oui" : "non");
+
+        Text info2 = new Text(infoStr2.toString());
+        info2.setTextAlignment(TextAlignment.LEFT);
+        info2.setWrappingWidth(600);
+
+        vBox.getChildren().addAll(
+                new Label(),
+                titre,
+                new Label(),
+                info1,
+                new Label(),
+                texte,
+                new Label(),
+                info2);
+
+        Scene showScene = new Scene(scrollPane, 640, 480);
+        showStage.setScene(showScene);
+        showStage.showAndWait();
+    }
+
+    private void modifierActualite() {
+        ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
+
+        // TODO error handling
+        for (News news : newsSelected) {
+            switch (news.getClass().getSimpleName()) {
+                case "Photo":
+                    modifierPhoto((Photo) news);
+                    break;
+                case "ArticleDePresse":
+                    modifierArticle((ArticleDePresse) news);
+                    break;
+            }
+        }
+    }
+
+    private void modifierPhoto(Photo photo) {
+        Dialog<Photo> dialog = new Dialog<>();
+        dialog.setTitle("Photo modification");
+        dialog.setHeaderText("Remplissez les paramètres de photo");
+
+        // TODO extract
+        ButtonType enregistrerButtonType = new ButtonType("Enregistrer", ButtonData.OK_DONE);
+        ButtonType annulerButtonType = new ButtonType("Annuler", ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(enregistrerButtonType, annulerButtonType);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField titre = new TextField(photo.getTitre());
+        TextField auteur = new TextField(photo.getAuteur());
+        TextField date = new TextField(photo.getDate().toString()); // TODO DatePicker
+        TextField source = new TextField(photo.getSource().toString());
+        TextField resolutionHauteur = new TextField(String.valueOf(photo.getResolutionHauteur()));
+        TextField resolutionLargeur = new TextField(String.valueOf(photo.getResolutionLargeur()));
+        TextField format = new TextField(photo.getFormat()); // TODO chooser
+        CheckBox enCouleur = new CheckBox();
+        if (photo.isEnCouleur()) enCouleur.setSelected(true);
+
+        Button ouvrirImageBouton = new Button("Ouvrir...");
+        final File[] file = new File[1];
+
+        // TODO images only
+        ouvrirImageBouton.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Ouvrir une image");
+            file[0] = fileChooser.showOpenDialog(stage);
+        });
+
+        grid.add(new Label("Titre:"), 0, 0);
+        grid.add(titre, 1, 0);
+        grid.add(new Label("Auteur:"), 0, 1);
+        grid.add(auteur, 1, 1);
+        grid.add(new Label("Date:"), 0, 2);
+        grid.add(date, 1, 2);
+        grid.add(new Label("Source:"), 0, 3);
+        grid.add(source, 1, 3);
+        grid.add(new Label("Image:"), 0, 4);
+        grid.add(ouvrirImageBouton, 1, 4);
+        grid.add(new Label("Resolution hauteur:"), 0, 5);
+        grid.add(resolutionHauteur, 1, 5);
+        grid.add(new Label("Resolution largeur:"), 0, 6);
+        grid.add(resolutionLargeur, 1, 6);
+        grid.add(new Label("Format:"), 0, 7);
+        grid.add(format, 1, 7);
+        grid.add(new Label("En couleur"), 0, 8);
+        grid.add(enCouleur, 1, 8);
+
+        // TODO add validation
+//        username.textProperty().addListener((observable, oldValue, newValue) -> {
+//            loginButton.setDisable(newValue.trim().isEmpty());
+//        });
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the titre field by default.
+        Platform.runLater(titre::requestFocus);
+
+        // convert
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == enregistrerButtonType) {
+                try {
+                    LocalDate localDate = LocalDate.parse(date.getText());
+                    URL url = new URL(source.getText());
+                    int hauteur = Integer.parseInt(resolutionHauteur.getText());
+                    int largeur = Integer.parseInt(resolutionLargeur.getText());
+                    if (file[0] == null) file[0] = photo.getFichier();
+                    return new Photo(titre.getText(), auteur.getText(), localDate, url, file[0], format.getText(), hauteur, largeur, enCouleur.isSelected());
+                } catch (Exception e) {
+                    e.printStackTrace(); // TODO Alert
+                }
+            }
+            return null;
+        });
+
+        Optional<Photo> resultat = dialog.showAndWait();
+        if (resultat.isPresent()) {
+            maBase.change(photo, resultat.get());
+            afficherBase();
+        }
+    }
+
+    private void modifierArticle(ArticleDePresse articleDePresse) {
+        Dialog<ArticleDePresse> dialog = new Dialog<>();
+        dialog.setTitle("Article de presse modification");
+        dialog.setHeaderText("Remplissez les paramètres d'article");
+
+        // TODO extract
+        ButtonType enregistrerButtonType = new ButtonType("Enregistrer", ButtonData.OK_DONE);
+        ButtonType annulerButtonType = new ButtonType("Annuler", ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(enregistrerButtonType, annulerButtonType);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField titre = new TextField(articleDePresse.getTitre());
+        TextField auteur = new TextField(articleDePresse.getAuteur());
+        TextField date = new TextField(articleDePresse.getDate().toString()); // TODO DatePicker
+        TextField source = new TextField(articleDePresse.getSource().toString());
+        TextArea texte = new TextArea(articleDePresse.getTexte());
+        texte.setWrapText(true);
+        TextField versionLongue = new TextField(articleDePresse.getVersionLongue().toString());
+        CheckBox uniquementElectronique = new CheckBox();
+        if (articleDePresse.isUniquementElectronique()) uniquementElectronique.setSelected(true);
+
+        grid.add(new Label("Titre:"), 0, 0);
+        grid.add(titre, 1, 0);
+        grid.add(new Label("Auteur:"), 0, 1);
+        grid.add(auteur, 1, 1);
+        grid.add(new Label("Date:"), 0, 2);
+        grid.add(date, 1, 2);
+        grid.add(new Label("Source:"), 0, 3);
+        grid.add(source, 1, 3);
+        grid.add(new Label("Texte:"), 0, 4);
+        grid.add(texte, 1, 4);
+        grid.add(new Label("Version longue (URL):"), 0, 5);
+        grid.add(versionLongue, 1, 5);
+        grid.add(new Label("Uniquement électronique:"), 0, 6);
+        grid.add(uniquementElectronique, 1, 6);
+
+        // TODO add validation
+//        username.textProperty().addListener((observable, oldValue, newValue) -> {
+//            loginButton.setDisable(newValue.trim().isEmpty());
+//        });
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the titre field by default.
+        Platform.runLater(titre::requestFocus);
+
+        // convert
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == enregistrerButtonType) {
+                try {
+                    LocalDate localDate = LocalDate.parse(date.getText());
+                    URL url = new URL(source.getText());
+                    URL longue = new URL(versionLongue.getText());
+                    return new ArticleDePresse(titre.getText(), auteur.getText(), localDate, url, texte.getText(), longue, uniquementElectronique.isSelected());
+                } catch (Exception e) {
+                    e.printStackTrace(); // TODO Alert
+                }
+            }
+            return null;
+        });
+
+        Optional<ArticleDePresse> resultat = dialog.showAndWait();
+        if (resultat.isPresent()) {
+            maBase.change(articleDePresse, resultat.get());
+            afficherBase();
+        }
     }
 
     private void supprimerActualite() {
