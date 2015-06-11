@@ -44,6 +44,7 @@ public class MesNews extends Application {
     TextField rechercheChamp;
     TableView<News> table;
 
+    // TODO image black and white
     public static void main(String[] args) {
         launch(args);
     }
