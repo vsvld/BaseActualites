@@ -9,15 +9,13 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.apache.lucene.queryparser.classic.ParseException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static javafx.scene.control.Alert.*;
@@ -42,6 +41,7 @@ public class MesNews extends Application {
     private Stage stage;
     private BorderPane layout;
     private MenuBar menuBar;
+    TextField rechercheChamp;
     TableView<News> table;
 
     public static void main(String[] args) {
@@ -115,7 +115,7 @@ public class MesNews extends Application {
 
         alert.showAndWait();
 
-        afficherBase();
+        afficherTable(maBase.getBase());
     }
 
     // TODO confirmation and saving
@@ -126,7 +126,7 @@ public class MesNews extends Application {
 
         try {
             maBase = new BaseDeNews();
-            maBase.lireDansFichier(file);
+            maBase.lireLeFichier(file);
 
             // TODO all dialogs to methods
             Alert alert = new Alert(AlertType.INFORMATION);
@@ -135,7 +135,7 @@ public class MesNews extends Application {
             alert.setContentText("Vous avez bien ouvert le fichier !");
             alert.showAndWait();
 
-            afficherBase();
+            afficherTable(maBase.getBase());
 
         } catch (IOException | ClassNotFoundException e) {
             Alert alert = new Alert(AlertType.ERROR);
@@ -252,9 +252,16 @@ public class MesNews extends Application {
 
         Optional<Photo> resultat = dialog.showAndWait();
         if (resultat.isPresent()) {
-//            System.out.println(resultat);
-            maBase.ajouter(resultat.get());
-            afficherBase();
+            try {
+                maBase.ajouter(resultat.get());
+            } catch (IOException  e) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Erreur");
+                alert.setHeaderText("Quelque chose ne va pas avec addition d'objet sur la base !");
+                alert.setContentText(e.toString());
+                alert.showAndWait();
+            }
+            afficherTable(maBase.getBase());
         }
     }
 
@@ -326,9 +333,16 @@ public class MesNews extends Application {
 
         Optional<ArticleDePresse> resultat = dialog.showAndWait();
         if (resultat.isPresent()) {
-//            System.out.println(resultat);
-            maBase.ajouter(resultat.get());
-            afficherBase();
+            try {
+                maBase.ajouter(resultat.get());
+            } catch (IOException e) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Erreur");
+                alert.setHeaderText("Quelque chose ne va pas avec addition d'objet sur la base !");
+                alert.setContentText(e.toString());
+                alert.showAndWait();
+            }
+            afficherTable(maBase.getBase());
         }
     }
 
@@ -341,7 +355,15 @@ public class MesNews extends Application {
     }
 
     private void rechercher() {
-
+        try {
+            afficherTable(maBase.chercher(rechercheChamp.getText()));
+        } catch (IOException | ParseException e) {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Erreur");
+            alert.setHeaderText("Quelque chose ne va pas avec recherche !");
+            alert.setContentText(e.toString());
+            alert.showAndWait();
+        }
     }
 
     // TODO confirmation and saving
@@ -353,7 +375,7 @@ public class MesNews extends Application {
         return maBase != null;
     }
 
-    private void afficherBase() {
+    private void afficherTable(ArrayList<News> news) {
         // Date colonne
         TableColumn<News, String> dateColonne = new TableColumn<>("Date");
         dateColonne.setMinWidth(200);
@@ -374,30 +396,50 @@ public class MesNews extends Application {
         auteurColonne.setMinWidth(200);
         auteurColonne.setCellValueFactory(new PropertyValueFactory<>("auteur"));
 
-        // Recherche
-        TextField rechercheChamp = new TextField();
+
+        // Recherche champ
+
+        rechercheChamp = new TextField();
         rechercheChamp.setMinWidth(200);
 
+        // Recherche bouton
         Button rechercheBouton = new Button("Chercher");
         rechercheBouton.setOnAction(e -> rechercher());
 
-        // Ouvrir et supprimer boutons
+        // "Montrer" bouton
         Button montrerBouton = new Button("Montrer");
         montrerBouton.setOnAction(e -> montrerActualite());
+
+        // "Modifier" bouton
+        Button modifierBouton = new Button("Modifier");
+        modifierBouton.setOnAction(e -> modifierActualite());
+
+        // "Supprimer" bouton
         Button supprimerBouton = new Button("Supprimer");
         supprimerBouton.setOnAction(e -> supprimerActualite());
 
-        HBox hBox = new HBox();
-        hBox.setPadding(new Insets(10, 10, 10, 10));
-        hBox.setSpacing(10);
-        hBox.getChildren().addAll(montrerBouton, supprimerBouton, rechercheChamp, rechercheBouton);
+        HBox rightFooter = new HBox();
+        rightFooter.setPadding(new Insets(10, 10, 10, 10));
+        rightFooter.setSpacing(10);
+        rightFooter.setAlignment(Pos.BASELINE_RIGHT);
+        rightFooter.getChildren().addAll(rechercheChamp, rechercheBouton);
+
+        HBox leftFooter = new HBox();
+        leftFooter.setPadding(new Insets(10, 10, 10, 10));
+        leftFooter.setSpacing(10);
+        leftFooter.setAlignment(Pos.BASELINE_LEFT);
+        leftFooter.getChildren().addAll(montrerBouton, modifierBouton, supprimerBouton);
+
+        HBox footer = new HBox();
+        HBox.setHgrow(rightFooter, Priority.ALWAYS);
+        footer.getChildren().addAll(leftFooter, rightFooter);
 
         table = new TableView<>();
-        table.setItems(FXCollections.observableArrayList(maBase.getBase()));
+        table.setItems(FXCollections.observableArrayList(news));
         table.getColumns().addAll(dateColonne, typeColonne, titreColonne, auteurColonne);
 
         layout.setCenter(table);
-        layout.setBottom(hBox);
+        layout.setBottom(footer);
     }
 
     // TODO check if no selected on show, edit, delete
@@ -621,8 +663,16 @@ public class MesNews extends Application {
 
         Optional<Photo> resultat = dialog.showAndWait();
         if (resultat.isPresent()) {
-            maBase.change(photo, resultat.get());
-            afficherBase();
+            try {
+                maBase.changer(photo, resultat.get());
+            } catch (IOException e) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Erreur");
+                alert.setHeaderText("Quelque chose ne va pas avec changement d'objet sur la base !");
+                alert.setContentText(e.toString());
+                alert.showAndWait();
+            }
+            afficherTable(maBase.getBase());
         }
     }
 
@@ -693,11 +743,20 @@ public class MesNews extends Application {
 
         Optional<ArticleDePresse> resultat = dialog.showAndWait();
         if (resultat.isPresent()) {
-            maBase.change(articleDePresse, resultat.get());
-            afficherBase();
+            try {
+                maBase.changer(articleDePresse, resultat.get());
+            } catch (IOException e) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Erreur");
+                alert.setHeaderText("Quelque chose ne va pas avec changement d'objet sur la base !");
+                alert.setContentText(e.toString());
+                alert.showAndWait();
+            }
+            afficherTable(maBase.getBase());
         }
     }
 
+    // TODO check
     private void supprimerActualite() {
         ObservableList<News> newsSelected, allNews;
         allNews = table.getItems();
