@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.Serializable;
 import java.net.URL;
 import java.time.LocalDate;
 
@@ -5,27 +7,27 @@ import java.time.LocalDate;
  * Created by vsevolod on 16.04.15.
  */
 public class Photo extends News {
-    private String photoChemin;
+    private File fichier;
     private String format;
     private int resolutionHauteur;
     private int resolutionLargeur;
     private boolean enCouleur;
 
-    public Photo(String titre, String auteur, LocalDate date, URL source, String photoChemin, String format, int resolutionHauteur, int resolutionLargeur, boolean enCouleur) {
+    public Photo(String titre, String auteur, LocalDate date, URL source, File fichier, String format, int resolutionHauteur, int resolutionLargeur, boolean enCouleur) {
         super(titre, auteur, date, source);
-        this.photoChemin = photoChemin;
+        this.fichier = fichier;
         this.format = format;
         this.resolutionHauteur = resolutionHauteur;
         this.resolutionLargeur = resolutionLargeur;
         this.enCouleur = enCouleur;
     }
 
-    public String getPhotoChemin() {
-        return photoChemin;
+    public File getFichier() {
+        return fichier;
     }
 
-    public void setPhotoChemin(String photoChemin) {
-        this.photoChemin = photoChemin;
+    public void setFichier(File fichier) {
+        this.fichier = fichier;
     }
 
     public String getFormat() {
@@ -63,7 +65,7 @@ public class Photo extends News {
     @Override
     public String toString() {
         return super.toString() + "\n" +
-                "Photo: '" + photoChemin + "'|" + format + "|" +
+                "Photo: '" + fichier.getName() + "'|" + format + "|" +
                 resolutionLargeur + 'x' + resolutionHauteur + '|' +
                 (enCouleur ? "en couleur" : "noir et blanc") ;
     }

@@ -1,19 +1,21 @@
+import java.io.Serializable;
 import java.net.URL;
 import java.time.LocalDate;
 
-/**
- * Created by vsevolod on 15.04.15.
- */
-public abstract class News implements Comparable<News> {
-    private String titre, auteur;
+public abstract class News implements Comparable<News>, Serializable {
+    private String titre, auteur, type;
     private LocalDate date;
     private URL source;
+
+    public News() {
+    }
 
     public News(String titre, String auteur, LocalDate date, URL source) {
         this.titre = titre;
         this.auteur = auteur;
         this.date = date;
         this.source = source;
+        type = this.getClass().getSimpleName();
     }
 
     public String getTitre() {
@@ -48,30 +50,16 @@ public abstract class News implements Comparable<News> {
         this.source = source;
     }
 
-    public void afficher() {
-        if (titre != null)  System.out.println("Titre: " + titre);
-        if (date != null)   System.out.println("Date: " + date);
-        if (auteur != null) System.out.println("Auteur: " + auteur);
-        if (source != null) System.out.println("Source: " + source);
+    public String getType() {
+        return type;
     }
 
-//    public void saisir() {
-//        System.out.print("Titre: ");
-//        titre = Lire.S();
-//
-//        System.out.print("Date (yyyy-mm-dd): ");
-//        date = LocalDate.parse(Lire.S());
-//
-//        System.out.print("Auteur: ");
-//        auteur = Lire.S();
-//
-//        System.out.print("Source: ");
-//        try {
-//            source = new URL(Lire.S());
-//        } catch (MalformedURLException e) {
-//            e.printStackTrace();
-//        }
-//    }
+    public void afficher() {
+//        if (titre != null)  System.out.println("Titre: " + titre);
+//        if (date != null)   System.out.println("Date: " + date);
+//        if (auteur != null) System.out.println("Auteur: " + auteur);
+//        if (source != null) System.out.println("Source: " + source);
+    }
 
     @Override
     public String toString() {

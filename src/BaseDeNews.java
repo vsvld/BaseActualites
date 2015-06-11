@@ -1,40 +1,98 @@
-import java.io.*;
-import java.util.Iterator;
-import java.util.TreeSet;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.*;
+import org.apache.lucene.index.*;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.store.RAMDirectory;
 
-/**
- * Created by vsevolod on 16.04.15.
- */
-public class BaseDeNews implements Serializable {
-    private TreeSet<News> base;
+import java.io.*;
+import java.util.ArrayList;
+
+public class BaseDeNews {
+    private ArrayList<News> base;
+    private transient RAMDirectory directory; // in-memory representation of the index
+    private transient IndexWriter indexWriter;
 
     public void initialiser() {
-        base = new TreeSet<>();
+        base = new ArrayList<>();
+        directory = new RAMDirectory();
     }
 
-    public void ajoute(News news) {
+    public ArrayList<News> getBase() {
+        return base;
+    }
+
+    public void ajouter(News news) throws IOException {
         base.add(news);
+
+        indexWriter = new IndexWriter(directory, new IndexWriterConfig(new StandardAnalyzer()));
+        Document doc = new Document();
+        doc.add(new IntField("baseIndex", base.indexOf(news), Field.Store.NO));
+        doc.add(new StringField("titre", news.getTitre(), Field.Store.YES));
+        doc.add(new StringField("auteur", news.getAuteur(), Field.Store.YES));
+
+        indexWriter.addDocument(doc);
+        indexWriter.close();
     }
 
-    public void afficher() {
-        for (News news : base) {
-            System.out.println(news);
-        }
-    }
-
-    public void supprimer() {
-
-    }
-
-    public void ecrireDansFichier(String fichier) throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(fichier); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+    public void ecrireDansFichier(File file) throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(file); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(base);
         }
     }
 
-    public void lireDansFichier(String fichier) throws IOException, ClassNotFoundException {
-        try (FileInputStream fos = new FileInputStream(fichier); ObjectInputStream oos = new ObjectInputStream(fos)) {
-            base = (TreeSet<News>) oos.readObject();
+    public void lireLeFichier(File file) throws IOException, ClassNotFoundException {
+        try (FileInputStream fos = new FileInputStream(file); ObjectInputStream oos = new ObjectInputStream(fos)) {
+            base = (ArrayList<News>) oos.readObject();
+            directory = new RAMDirectory();
+            indexWriter = new IndexWriter(directory, new IndexWriterConfig(new StandardAnalyzer()));
+
+            for (News news : base) {
+                Document doc = new Document();
+                doc.add(new IntField("baseIndex", base.indexOf(news), Field.Store.NO));
+                doc.add(new StringField("titre", news.getTitre(), Field.Store.YES));
+                doc.add(new StringField("auteur", news.getAuteur(), Field.Store.YES));
+                indexWriter.addDocument(doc);
+            }
+
+            indexWriter.close();
         }
+    }
+    
+    public void changer(News old, News neww) throws IOException {
+        base.set(base.indexOf(old), neww);
+
+        indexWriter = new IndexWriter(directory, new IndexWriterConfig(new StandardAnalyzer()));
+        Document doc = new Document();
+        doc.add(new IntField("baseIndex", base.indexOf(neww), Field.Store.NO));
+        doc.add(new StringField("titre", neww.getTitre(), Field.Store.YES));
+        doc.add(new StringField("auteur", neww.getAuteur(), Field.Store.YES));
+        indexWriter.updateDocument(new Term("titre", old.getTitre()), doc);
+
+        indexWriter.close();
+    }
+
+    public ArrayList<News> chercher(String searchString) throws IOException, ParseException {
+        ArrayList<News> news = new ArrayList<>();
+
+        IndexReader indexReader = DirectoryReader.open(directory);
+        IndexSearcher searcher = new IndexSearcher(indexReader);
+        Analyzer analyzer = new StandardAnalyzer();
+        QueryParser queryParser = new MultiFieldQueryParser(new String[]{"titre", "auteur"}, analyzer);
+        Query query = queryParser.parse(searchString);
+        TopDocs results = searcher.search(query, 10);
+
+        for (int i = 0; i < results.scoreDocs.length; i++){
+            String ind = String.valueOf(searcher.doc(results.scoreDocs[i].doc).getField("baseIndex"));
+            System.out.println("*" + ind);
+            news.add(base.get(Integer.parseInt(ind)));
+        }
+
+        return news;
     }
 }
