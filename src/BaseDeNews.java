@@ -7,11 +7,13 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.RAMDirectory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class BaseDeNews {
     private ArrayList<News> base;
@@ -83,13 +85,19 @@ public class BaseDeNews {
         IndexReader indexReader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(indexReader);
         Analyzer analyzer = new StandardAnalyzer();
-        QueryParser queryParser = new MultiFieldQueryParser(new String[]{"titre", "auteur"}, analyzer);
+//        QueryParser queryParser = new MultiFieldQueryParser(new String[]{"titre", "auteur"}, analyzer);
+        QueryParser queryParser = new QueryParser("titre", analyzer);
         Query query = queryParser.parse(searchString);
         TopDocs results = searcher.search(query, 10);
 
-        for (int i = 0; i < results.scoreDocs.length; i++){
-            String ind = String.valueOf(searcher.doc(results.scoreDocs[i].doc).getField("baseIndex"));
-            System.out.println("*" + ind);
+        // debug
+        System.out.println(Arrays.toString(directory.listAll()));
+        System.out.println(searchString);
+        System.out.println(searcher.count(query));
+
+        for (ScoreDoc scoreDoc : results.scoreDocs) {
+            String ind = String.valueOf(searcher.doc(scoreDoc.doc).getField("baseIndex"));
+            System.out.println(ind);
             news.add(base.get(Integer.parseInt(ind)));
         }
 
