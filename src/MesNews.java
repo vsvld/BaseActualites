@@ -4,6 +4,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -28,6 +29,7 @@ import java.util.Optional;
 
 import static javafx.scene.control.Alert.*;
 import static javafx.scene.control.ButtonBar.*;
+import static javafx.stage.FileChooser.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -69,7 +71,6 @@ public class MesNews extends Application {
         baseMenu.getItems().addAll(nouvelleBaseBouton, ouvrirBaseBouton, sauvegarderBaseBouton);
 
         // Actualités menu
-        // TODO Disable buttons when db not created
         Menu actualitesMenu = new Menu("Actualités");
 
         MenuItem nouvellePhotoBouton = new MenuItem("Nouvelle photo");
@@ -78,19 +79,10 @@ public class MesNews extends Application {
         MenuItem nouveauArticleBouton = new MenuItem("Nouveau article de presse");
         nouveauArticleBouton.setOnAction(e -> creerArticle());
 
-        CheckMenuItem afficherPhotosBouton = new CheckMenuItem("Afficher photos");
-        afficherPhotosBouton.setOnAction(e -> afficherPhotos());
+        MenuItem rafraichirBouton = new MenuItem("Rafraîchir");
+        rafraichirBouton.setOnAction(e -> afficherTable(maBase.getBase()));
 
-        CheckMenuItem afficherArticlesBouton = new CheckMenuItem("Afficher articles de presse");
-        afficherArticlesBouton.setOnAction(e -> afficherArticles());
-
-        MenuItem rechercherBouton = new MenuItem("Rechercher");
-        rechercherBouton.setOnAction(e -> rechercher());
-
-        actualitesMenu.getItems().addAll(nouvellePhotoBouton, nouveauArticleBouton, new SeparatorMenuItem(),
-                afficherPhotosBouton, afficherArticlesBouton, new SeparatorMenuItem(), rechercherBouton);
-
-        // TODO General menu with "exit", "about us" etc.
+        actualitesMenu.getItems().addAll(nouvellePhotoBouton, nouveauArticleBouton, new SeparatorMenuItem(), rafraichirBouton);
 
         // Main menu bar
         menuBar = new MenuBar();
@@ -129,7 +121,6 @@ public class MesNews extends Application {
             maBase = new BaseDeNews();
             maBase.lireLeFichier(file);
 
-            // TODO all dialogs to methods
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Information");
             alert.setHeaderText(null);
@@ -149,6 +140,15 @@ public class MesNews extends Application {
     }
 
     private void sauvegarder() {
+        if (!estCree()) {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setHeaderText("Il n'y a pas de base !");
+            alert.setContentText("Creer ou ouvrez la base !");
+            alert.showAndWait();
+            return;
+        }
+
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Sauvegarder la base d'actualités");
         File file = fileChooser.showSaveDialog(stage);
@@ -171,13 +171,19 @@ public class MesNews extends Application {
     }
 
     private void creerPhoto() {
+        if (!estCree()) {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setHeaderText("Il n'y a pas de base !");
+            alert.setContentText("Creer ou ouvrez la base !");
+            alert.showAndWait();
+            return;
+        }
+
         Dialog<Photo> dialog = new Dialog<>();
         dialog.setTitle("Photo creation");
         dialog.setHeaderText("Remplissez les paramètres de photo");
 
-        // TODO set the icon
-
-        // TODO extract
         ButtonType enregistrerButtonType = new ButtonType("Enregistrer", ButtonData.OK_DONE);
         ButtonType annulerButtonType = new ButtonType("Annuler", ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(enregistrerButtonType, annulerButtonType);
@@ -189,7 +195,7 @@ public class MesNews extends Application {
 
         TextField titre = new TextField();
         TextField auteur = new TextField();
-        TextField date = new TextField(); // TODO DatePicker
+        DatePicker date = new DatePicker();
         TextField source = new TextField();
         TextField resolutionHauteur = new TextField();
         TextField resolutionLargeur = new TextField();
@@ -199,10 +205,10 @@ public class MesNews extends Application {
         Button ouvrirImageBouton = new Button("Ouvrir...");
         final File[] file = new File[1];
 
-        // TODO images only
         ouvrirImageBouton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Ouvrir une image");
+            fileChooser.getExtensionFilters().add(new ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"));
             file[0] = fileChooser.showOpenDialog(stage);
         });
 
@@ -225,10 +231,27 @@ public class MesNews extends Application {
         grid.add(new Label("En couleur"), 0, 8);
         grid.add(enCouleur, 1, 8);
 
-        // TODO add validation
-//        username.textProperty().addListener((observable, oldValue, newValue) -> {
-//            loginButton.setDisable(newValue.trim().isEmpty());
-//        });
+        Node enregistrerBouton = dialog.getDialogPane().lookupButton(enregistrerButtonType);
+        enregistrerBouton.setDisable(true);
+
+        titre.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        auteur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        source.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        resolutionHauteur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        resolutionLargeur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        format.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
 
         dialog.getDialogPane().setContent(grid);
 
@@ -239,7 +262,7 @@ public class MesNews extends Application {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == enregistrerButtonType) {
                 try {
-                    LocalDate localDate = LocalDate.parse(date.getText());
+                    LocalDate localDate = date.getValue();
                     URL url = new URL(source.getText());
                     int hauteur = Integer.parseInt(resolutionHauteur.getText());
                     int largeur = Integer.parseInt(resolutionLargeur.getText());
@@ -267,13 +290,19 @@ public class MesNews extends Application {
     }
 
     private void creerArticle() {
+        if (!estCree()) {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setHeaderText("Il n'y a pas de base !");
+            alert.setContentText("Creer ou ouvrez la base !");
+            alert.showAndWait();
+            return;
+        }
+
         Dialog<ArticleDePresse> dialog = new Dialog<>();
         dialog.setTitle("Article de presse creation");
         dialog.setHeaderText("Remplissez les paramètres d'article");
 
-        // TODO set the icon
-
-        // TODO extract
         ButtonType enregistrerButtonType = new ButtonType("Enregistrer", ButtonData.OK_DONE);
         ButtonType annulerButtonType = new ButtonType("Annuler", ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(enregistrerButtonType, annulerButtonType);
@@ -285,7 +314,7 @@ public class MesNews extends Application {
 
         TextField titre = new TextField();
         TextField auteur = new TextField();
-        TextField date = new TextField(); // TODO DatePicker
+        DatePicker date = new DatePicker();
         TextField source = new TextField();
         TextArea texte = new TextArea();
         texte.setWrapText(true);
@@ -307,10 +336,21 @@ public class MesNews extends Application {
         grid.add(new Label("Uniquement électronique:"), 0, 6);
         grid.add(uniquementElectronique, 1, 6);
 
-        // TODO add validation
-//        username.textProperty().addListener((observable, oldValue, newValue) -> {
-//            loginButton.setDisable(newValue.trim().isEmpty());
-//        });
+        Node enregistrerBouton = dialog.getDialogPane().lookupButton(enregistrerButtonType);
+        enregistrerBouton.setDisable(true);
+
+        titre.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        auteur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        source.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        texte.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
 
         dialog.getDialogPane().setContent(grid);
 
@@ -321,7 +361,7 @@ public class MesNews extends Application {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == enregistrerButtonType) {
                 try {
-                    LocalDate localDate = LocalDate.parse(date.getText());
+                    LocalDate localDate = date.getValue();
                     URL url = new URL(source.getText());
                     URL longue = new URL(versionLongue.getText());
                     return new ArticleDePresse(titre.getText(), auteur.getText(), localDate, url, texte.getText(), longue, uniquementElectronique.isSelected());
@@ -345,14 +385,6 @@ public class MesNews extends Application {
             }
             afficherTable(maBase.getBase());
         }
-    }
-
-    private void afficherArticles() {
-
-    }
-
-    private void afficherPhotos() {
-
     }
 
     private void rechercher() {
@@ -568,7 +600,6 @@ public class MesNews extends Application {
     private void modifierActualite() {
         ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
 
-        // TODO error handling
         for (News news : newsSelected) {
             switch (news.getClass().getSimpleName()) {
                 case "Photo":
@@ -598,7 +629,7 @@ public class MesNews extends Application {
 
         TextField titre = new TextField(photo.getTitre());
         TextField auteur = new TextField(photo.getAuteur());
-        TextField date = new TextField(photo.getDate().toString()); // TODO DatePicker
+        DatePicker date = new DatePicker(photo.getDate());
         TextField source = new TextField(photo.getSource().toString());
         TextField resolutionHauteur = new TextField(String.valueOf(photo.getResolutionHauteur()));
         TextField resolutionLargeur = new TextField(String.valueOf(photo.getResolutionLargeur()));
@@ -609,10 +640,10 @@ public class MesNews extends Application {
         Button ouvrirImageBouton = new Button("Ouvrir...");
         final File[] file = new File[1];
 
-        // TODO images only
         ouvrirImageBouton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Ouvrir une image");
+            fileChooser.getExtensionFilters().add(new ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"));
             file[0] = fileChooser.showOpenDialog(stage);
         });
 
@@ -635,10 +666,27 @@ public class MesNews extends Application {
         grid.add(new Label("En couleur"), 0, 8);
         grid.add(enCouleur, 1, 8);
 
-        // TODO add validation
-//        username.textProperty().addListener((observable, oldValue, newValue) -> {
-//            loginButton.setDisable(newValue.trim().isEmpty());
-//        });
+        Node enregistrerBouton = dialog.getDialogPane().lookupButton(enregistrerButtonType);
+        enregistrerBouton.setDisable(true);
+
+        titre.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        auteur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        source.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        resolutionHauteur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        resolutionLargeur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        format.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
 
         dialog.getDialogPane().setContent(grid);
 
@@ -649,7 +697,7 @@ public class MesNews extends Application {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == enregistrerButtonType) {
                 try {
-                    LocalDate localDate = LocalDate.parse(date.getText());
+                    LocalDate localDate = date.getValue();
                     URL url = new URL(source.getText());
                     int hauteur = Integer.parseInt(resolutionHauteur.getText());
                     int largeur = Integer.parseInt(resolutionLargeur.getText());
@@ -682,7 +730,6 @@ public class MesNews extends Application {
         dialog.setTitle("Article de presse modification");
         dialog.setHeaderText("Remplissez les paramètres d'article");
 
-        // TODO extract
         ButtonType enregistrerButtonType = new ButtonType("Enregistrer", ButtonData.OK_DONE);
         ButtonType annulerButtonType = new ButtonType("Annuler", ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(enregistrerButtonType, annulerButtonType);
@@ -694,7 +741,7 @@ public class MesNews extends Application {
 
         TextField titre = new TextField(articleDePresse.getTitre());
         TextField auteur = new TextField(articleDePresse.getAuteur());
-        TextField date = new TextField(articleDePresse.getDate().toString()); // TODO DatePicker
+        DatePicker date = new DatePicker(articleDePresse.getDate());
         TextField source = new TextField(articleDePresse.getSource().toString());
         TextArea texte = new TextArea(articleDePresse.getTexte());
         texte.setWrapText(true);
@@ -717,10 +764,21 @@ public class MesNews extends Application {
         grid.add(new Label("Uniquement électronique:"), 0, 6);
         grid.add(uniquementElectronique, 1, 6);
 
-        // TODO add validation
-//        username.textProperty().addListener((observable, oldValue, newValue) -> {
-//            loginButton.setDisable(newValue.trim().isEmpty());
-//        });
+        Node enregistrerBouton = dialog.getDialogPane().lookupButton(enregistrerButtonType);
+        enregistrerBouton.setDisable(true);
+
+        titre.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        auteur.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        source.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
+        texte.textProperty().addListener((observable, oldValue, newValue) -> {
+            enregistrerBouton.setDisable(newValue.trim().isEmpty());
+        });
 
         dialog.getDialogPane().setContent(grid);
 
@@ -731,7 +789,7 @@ public class MesNews extends Application {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == enregistrerButtonType) {
                 try {
-                    LocalDate localDate = LocalDate.parse(date.getText());
+                    LocalDate localDate = date.getValue();
                     URL url = new URL(source.getText());
                     URL longue = new URL(versionLongue.getText());
                     return new ArticleDePresse(titre.getText(), auteur.getText(), localDate, url, texte.getText(), longue, uniquementElectronique.isSelected());
@@ -757,12 +815,11 @@ public class MesNews extends Application {
         }
     }
 
-    // TODO check
     private void supprimerActualite() {
-        ObservableList<News> newsSelected, allNews;
-        allNews = table.getItems();
-        newsSelected = table.getSelectionModel().getSelectedItems();
+        ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
 
-        newsSelected.forEach(allNews::remove);
+        for (News news : newsSelected) {
+            maBase.supprimer(news);
+        }
     }
 }
