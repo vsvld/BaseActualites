@@ -2,6 +2,13 @@ import java.io.Serializable;
 import java.net.URL;
 import java.time.LocalDate;
 
+/**
+ * Abstract news class.
+ *
+ * @author ALOKHIN Vsevolod
+ * @author NIKONOVYCH Daria
+ * @author TEN Alina
+ */
 public abstract class News implements Comparable<News>, Serializable {
     private String titre, auteur, type;
     private LocalDate date;
@@ -52,13 +59,6 @@ public abstract class News implements Comparable<News>, Serializable {
 
     public String getType() {
         return type;
-    }
-
-    public void afficher() {
-//        if (titre != null)  System.out.println("Titre: " + titre);
-//        if (date != null)   System.out.println("Date: " + date);
-//        if (auteur != null) System.out.println("Auteur: " + auteur);
-//        if (source != null) System.out.println("Source: " + source);
     }
 
     @Override

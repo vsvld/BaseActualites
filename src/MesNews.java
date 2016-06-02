@@ -32,75 +32,93 @@ import static javafx.scene.control.ButtonBar.*;
 import static javafx.stage.FileChooser.*;
 
 /**
- * Created with IntelliJ IDEA.
- * User: vsvld
- * Date: 24.05.2015
- * Time: 23:31
+ * Classe principal de gestion de logiciel avec GUI.
+ *
+ * @author ALOKHIN Vsevolod
+ * @author NIKONOVYCH Daria
+ * @author TEN Alina
  */
 public class MesNews extends Application {
-
-    private static BaseDeNews maBase;
-    private Stage stage;
-    private BorderPane layout;
-    private MenuBar menuBar;
+    private static BaseDeNews maBase;   // base de news
+    private Stage stage;                // fenetre principal
+    private BorderPane layout;          // disposition d'elements
+    private MenuBar menuBar;            // menu
     TextField rechercheChamp;
     TableView<News> table;
 
-    // TODO image black and white
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * Entry point of the Application program.
+     * @param primaryStage
+     * @throws Exception
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
         stage = primaryStage;
         stage.setTitle("Base d'actualités");
 
-        // Base menu
+        // DB menu
         Menu baseMenu = new Menu("Base d'actualités");
 
+        // Buttons of menu
+        // New database
         MenuItem nouvelleBaseBouton = new MenuItem("Créer nouvelle");
         nouvelleBaseBouton.setOnAction(e -> creerBase());
 
+        // Open database from file
         MenuItem ouvrirBaseBouton = new MenuItem("Ouvrir");
-        ouvrirBaseBouton.setOnAction(e -> ouvrir());
+        ouvrirBaseBouton.setOnAction(e -> ouvrirBase());
 
+        // Save database to file
         MenuItem sauvegarderBaseBouton = new MenuItem("Sauvegarder");
-        sauvegarderBaseBouton.setOnAction(e -> sauvegarder());
+        sauvegarderBaseBouton.setOnAction(e -> sauvegarderBase());
 
+        // Adding buttons to DB menu
         baseMenu.getItems().addAll(nouvelleBaseBouton, ouvrirBaseBouton, sauvegarderBaseBouton);
 
-        // Actualités menu
+        // News menu
         Menu actualitesMenu = new Menu("Actualités");
 
+        // New photo
         MenuItem nouvellePhotoBouton = new MenuItem("Nouvelle photo");
         nouvellePhotoBouton.setOnAction(e -> creerPhoto());
 
+        // New article
         MenuItem nouveauArticleBouton = new MenuItem("Nouveau article de presse");
         nouveauArticleBouton.setOnAction(e -> creerArticle());
 
+        // Refresh table
         MenuItem rafraichirBouton = new MenuItem("Rafraîchir");
         rafraichirBouton.setOnAction(e -> afficherTable(maBase.getBase()));
 
+        // Adding buttons to News menu
         actualitesMenu.getItems().addAll(nouvellePhotoBouton, nouveauArticleBouton, new SeparatorMenuItem(), rafraichirBouton);
 
         // Main menu bar
         menuBar = new MenuBar();
         menuBar.getMenus().addAll(baseMenu, actualitesMenu);
 
+        // Setting and showing the window
         layout = new BorderPane();
         layout.setTop(menuBar);
-        layout.setCenter(new Label("Ouvriez la base, s'il vous plaît"));
+        layout.setCenter(new Label("Créez ou ouvrez la base, s'il vous plaît"));
         Scene scene = new Scene(layout, 800, 600);
         stage.setScene(scene);
         stage.show();
     }
 
-
+    /**
+     * Creating DB method.
+     */
     private void creerBase() {
+        // Creating new DB object and initializing it
         maBase = new BaseDeNews();
         maBase.initialiser();
 
+        // Message of successful creation
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("Information");
         alert.setHeaderText("La base viens d'être crée!");
@@ -108,25 +126,32 @@ public class MesNews extends Application {
 
         alert.showAndWait();
 
+        // Show all elements of DB via table
         afficherTable(maBase.getBase());
     }
 
-    // TODO confirmation and saving
-    private void ouvrir() {
+    /**
+     * Method to open DB from a file.
+     */
+    private void ouvrirBase() {
+        // Window for opening a file
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Ouvrir un fichier de base d'actualités");
         File file = fileChooser.showOpenDialog(stage);
 
+        // Reading from file, handling exceptions
         try {
             maBase = new BaseDeNews();
             maBase.lireLeFichier(file);
 
+            // Message of successful DB opening
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Information");
             alert.setHeaderText(null);
             alert.setContentText("Vous avez bien ouvert le fichier !");
             alert.showAndWait();
 
+            // Show all elements of DB via table
             afficherTable(maBase.getBase());
 
         } catch (IOException | ClassNotFoundException e) {
@@ -134,12 +159,15 @@ public class MesNews extends Application {
             alert.setTitle("Erreur");
             alert.setHeaderText("Quelque chose ne va pas avec ouverture de votre fichier !");
             alert.setContentText(e.toString());
-//            e.printStackTrace();
             alert.showAndWait();
         }
     }
 
-    private void sauvegarder() {
+    /**
+     * Method for saving DB to a file.
+     */
+    private void sauvegarderBase() {
+        // Can not save when DB does not exist
         if (!estCree()) {
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Information");
@@ -149,10 +177,12 @@ public class MesNews extends Application {
             return;
         }
 
+        // Window for choosing where to save DB
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Sauvegarder la base d'actualités");
         File file = fileChooser.showSaveDialog(stage);
 
+        // Writing to file, handling exceptions
         try {
             maBase.ecrireDansFichier(file);
 
@@ -170,7 +200,11 @@ public class MesNews extends Application {
         }
     }
 
+    /**
+     * Method for photo creation.
+     */
     private void creerPhoto() {
+        // Can not add news when DB does not exist
         if (!estCree()) {
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Information");
@@ -179,6 +213,8 @@ public class MesNews extends Application {
             alert.showAndWait();
             return;
         }
+
+        // Dialog for entering photo data
 
         Dialog<Photo> dialog = new Dialog<>();
         dialog.setTitle("Photo creation");
@@ -208,6 +244,7 @@ public class MesNews extends Application {
         ouvrirImageBouton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Ouvrir une image");
+            // Only images
             fileChooser.getExtensionFilters().add(new ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"));
             file[0] = fileChooser.showOpenDialog(stage);
         });
@@ -231,6 +268,7 @@ public class MesNews extends Application {
         grid.add(new Label("En couleur"), 0, 8);
         grid.add(enCouleur, 1, 8);
 
+        // Validation
         Node enregistrerBouton = dialog.getDialogPane().lookupButton(enregistrerButtonType);
         enregistrerBouton.setDisable(true);
 
@@ -255,10 +293,10 @@ public class MesNews extends Application {
 
         dialog.getDialogPane().setContent(grid);
 
-        // Request focus on the titre field by default.
+        // Request focus on the titre field by default
         Platform.runLater(titre::requestFocus);
 
-        // convert
+        // Convert
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == enregistrerButtonType) {
                 try {
@@ -275,6 +313,8 @@ public class MesNews extends Application {
         });
 
         Optional<Photo> resultat = dialog.showAndWait();
+
+        // if object was created successfuly, add it to DB
         if (resultat.isPresent()) {
             try {
                 maBase.ajouter(resultat.get());
@@ -289,7 +329,11 @@ public class MesNews extends Application {
         }
     }
 
+    /**
+     * Method for creating new article.
+     */
     private void creerArticle() {
+        // Can not add news when DB does not exist
         if (!estCree()) {
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Information");
@@ -298,6 +342,8 @@ public class MesNews extends Application {
             alert.showAndWait();
             return;
         }
+
+        // Dialog for entering photo data
 
         Dialog<ArticleDePresse> dialog = new Dialog<>();
         dialog.setTitle("Article de presse creation");
@@ -335,6 +381,8 @@ public class MesNews extends Application {
         grid.add(versionLongue, 1, 5);
         grid.add(new Label("Uniquement électronique:"), 0, 6);
         grid.add(uniquementElectronique, 1, 6);
+
+        // Validation
 
         Node enregistrerBouton = dialog.getDialogPane().lookupButton(enregistrerButtonType);
         enregistrerBouton.setDisable(true);
@@ -387,6 +435,9 @@ public class MesNews extends Application {
         }
     }
 
+    /**
+     * Searching the DB.
+     */
     private void rechercher() {
         try {
             afficherTable(maBase.chercher(rechercheChamp.getText()));
@@ -399,15 +450,18 @@ public class MesNews extends Application {
         }
     }
 
-    // TODO confirmation and saving
-    private void quitter() {
-
-    }
-
+    /**
+     * Checks if DB exists (created or opened).
+     * @return true if DB opened in the program
+     */
     private boolean estCree() {
         return maBase != null;
     }
 
+    /**
+     * Showing DB elements in the table.
+     * @param news news to show in the table
+     */
     private void afficherTable(ArrayList<News> news) {
         // Date colonne
         TableColumn<News, String> dateColonne = new TableColumn<>("Date");
@@ -475,7 +529,9 @@ public class MesNews extends Application {
         layout.setBottom(footer);
     }
 
-    // TODO check if no selected on show, edit, delete
+    /**
+     * Show new window with detailed info of selected news.
+     */
     private void montrerActualite() {
         ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
 
@@ -492,7 +548,10 @@ public class MesNews extends Application {
         }
     }
 
-    // TODO align scrollpane center both photo and article
+    /**
+     * Show photo.
+     * @param photo photo to show
+     */
     private void montrerPhoto(Photo photo) {
         Stage showStage = new Stage();
         VBox vBox = new VBox();
@@ -548,6 +607,10 @@ public class MesNews extends Application {
         showStage.showAndWait();
     }
 
+    /**
+     * Show article.
+     * @param articleDePresse article to show
+     */
     private void montrerArticle(ArticleDePresse articleDePresse) {
         Stage showStage = new Stage();
         VBox vBox = new VBox();
@@ -597,6 +660,9 @@ public class MesNews extends Application {
         showStage.showAndWait();
     }
 
+    /**
+     * Edit selected news.
+     */
     private void modifierActualite() {
         ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
 
@@ -612,6 +678,10 @@ public class MesNews extends Application {
         }
     }
 
+    /**
+     * Edit photo.
+     * @param photo photo to edit
+     */
     private void modifierPhoto(Photo photo) {
         Dialog<Photo> dialog = new Dialog<>();
         dialog.setTitle("Photo modification");
@@ -725,6 +795,10 @@ public class MesNews extends Application {
         }
     }
 
+    /**
+     * Edit article.
+     * @param articleDePresse article to edit
+     */
     private void modifierArticle(ArticleDePresse articleDePresse) {
         Dialog<ArticleDePresse> dialog = new Dialog<>();
         dialog.setTitle("Article de presse modification");
@@ -815,6 +889,9 @@ public class MesNews extends Application {
         }
     }
 
+    /**
+     * Delete selected article.
+     */
     private void supprimerActualite() {
         ObservableList<News> newsSelected = table.getSelectionModel().getSelectedItems();
 

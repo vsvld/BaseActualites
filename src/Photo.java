@@ -4,7 +4,11 @@ import java.net.URL;
 import java.time.LocalDate;
 
 /**
- * Created by vsevolod on 16.04.15.
+ * Photo class.
+ *
+ * @author ALOKHIN Vsevolod
+ * @author NIKONOVYCH Daria
+ * @author TEN Alina
  */
 public class Photo extends News {
     private File fichier;

@@ -14,20 +14,39 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/**
+ * Database class.
+ *
+ * @author ALOKHIN Vsevolod
+ * @author NIKONOVYCH Daria
+ * @author TEN Alina
+ */
 public class BaseDeNews {
-    private ArrayList<News> base;
-    private transient RAMDirectory directory; // in-memory representation of the index
-    private transient IndexWriter indexWriter;
+    private ArrayList<News> base;               // collection of news
+    private transient RAMDirectory directory;   // in-memory representation of the index, not serializable
+    private transient IndexWriter indexWriter;  // for creating the index, not serializable
 
+    /**
+     * Initialize DB.
+     */
     public void initialiser() {
         base = new ArrayList<>();
         directory = new RAMDirectory();
     }
 
+    /**
+     * Get collection of elements in DB
+     * @return
+     */
     public ArrayList<News> getBase() {
         return base;
     }
 
+    /**
+     * Add news into DB.
+     * @param news  news to be added
+     * @throws IOException
+     */
     public void ajouter(News news) throws IOException {
         base.add(news);
 
@@ -45,16 +64,31 @@ public class BaseDeNews {
         indexWriter.close();
     }
 
+    /**
+     * Delete the news.
+     * @param news news to be deleted from DB
+     */
     public void supprimer(News news) {
         base.remove(news);
     }
 
+    /**
+     * Serializing DB to file.
+     * @param file file to which serialize
+     * @throws IOException
+     */
     public void ecrireDansFichier(File file) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(file); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(base);
         }
     }
 
+    /**
+     * Deseralizing DB from file.
+     * @param file file from which deserialize
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     public void lireLeFichier(File file) throws IOException, ClassNotFoundException {
         try (FileInputStream fos = new FileInputStream(file); ObjectInputStream oos = new ObjectInputStream(fos)) {
             base = (ArrayList<News>) oos.readObject();
@@ -76,7 +110,13 @@ public class BaseDeNews {
             indexWriter.close();
         }
     }
-    
+
+    /**
+     * Change elements in DB.
+     * @param old old news
+     * @param neww new news
+     * @throws IOException
+     */
     public void changer(News old, News neww) throws IOException {
         base.set(base.indexOf(old), neww);
 
@@ -94,6 +134,13 @@ public class BaseDeNews {
         indexWriter.close();
     }
 
+    /**
+     * Search in DB
+     * @param searchString search query
+     * @return news elements that correspond the search
+     * @throws IOException
+     * @throws ParseException
+     */
     public ArrayList<News> chercher(String searchString) throws IOException, ParseException {
         ArrayList<News> news = new ArrayList<>();
 
@@ -104,11 +151,6 @@ public class BaseDeNews {
         queryParser.setAllowLeadingWildcard(true);
         Query query = queryParser.parse("*" + searchString + "*");
         TopDocs results = searcher.search(query, 10);
-
-        // debug
-        System.out.println(Arrays.toString(directory.listAll()));
-        System.out.println(searchString);
-        System.out.println(searcher.count(query));
 
         for (ScoreDoc scoreDoc : results.scoreDocs) {
             String ind = String.valueOf(searcher.doc(scoreDoc.doc).get("baseIndex"));
